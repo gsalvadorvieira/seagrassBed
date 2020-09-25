@@ -1,0 +1,164 @@
+copied from  varun:  bend_grass/openbc/romate_bkup.
+
+This works, but large h is produced at the outlet ad periodically released. 
+To check if this is due to the outflow bc, I rerun in a longer domain.
+Fails in larger domain. 
+
+On looking carefully, I see that ufbce was not changed in openbc_romate, but 
+commented out. 
+
+I want to reintroduce that. 
+
+cufu computed in vcenter. This is aflux. Then calculate cx at exit, and 
+ufbce at exit. 
+Not usable because cufu (using romate) is completely off the mark -- (v diff. 
+uf , an order of mag larger and of + or - sign)
+
+doesnt work. I've tried a simple fix in openbc,
+            ufbce(j,k)= 2.d0*uf(NI-1,j,k)-uf(NI-2,j,k)
+which runs,  but does not solve the problem properly.
+
+Create a new openbc that finds cufu based on fluxes
+
+
+add computation of cufh to vhydro
+Then use h(i+1) calculated in openbc as bc
+change hbc_openbc.f hfill_openbc.f , chfine_openbc.f
+None of this works. 
+
+Go back to keeping ufbce. 
+
+commenting out uf = ufbce in openbc - and still works. fine.
+
+Try to find an advection speed for uf and use this. 
+
+In momentum, set ufbce to uf, before next time step
+don't get the right h grad at i=NI faces so 
+In hfill, use extrapolotion to fill h at NI+1 -- didn't work
+
+Put correction for h at the end of vface.
+Doesn't work -- high freq. oscillations in h grow
+Unstable because it is not semi-implicit (only one time level).
+Doesn't make sense to put it here, while it is fine in vhydro.
+
+
+ufbce was set to uf at beginning of momentum
+now set it to uf - csp*( uf(NI - uf(NI-1))
+This doesn't work - go back to the Mar23 version where ufbce is set to uf
+at the beginning of momentum.
+
+Correct h -- now hxn should be from level 0 of the RK scheme
+Also change h solution so as to use the convergence of uf(n=0 level) and cxf
+to calculate dh/dt.
+
+Works - some oscillations in h  so kappa may need to be adjusted.
+Mar 25  - h oscillations subside with time, until blow up at 10,000 steps.
+
+Mar 26 - try kappah = 0.75, also use updated ufbce. 
+Kappa= 0.75 helps, but not the updated ufbce
+
+Compar Mar23 and Mar25 : Not too different . 
+Both set ufbce = uf at the beginning of momentum. 
+Mar25 version - used hxn and uf from 0 level of RK. 
+Mar23 version used hxn and uf from most recent level of RK
+
+Mar26 - kappa=0.75  (updating ufbce with wave sp doesn't work)
+Try to smooth out h at the boundary by using some upwinding. 
+1) in intpol.f  use interpolation to get cxf , instead of setting it to ufbce
+at East bndry.
+2)in vhydro_openbc             if (i.eq.NI) then
+               hxi= 2.0*h(NI,j) -3.d0*h(NI-1,j) +h(NI-2,j)  does not work
+
+inpol from interior works.
+Try using dh/dx inside for vhydro -doesn't work
+Try extrapolating h in hfill.f  - doesn't work
+
+p at exit in grassy layer is zigzag. 
+Smooth external p in mgpfill_  does not work
+
+in viscous_grass  -there was no x -dire visc. Put this back. 
+
+Make Cd=0, to test - amplifies problems.  Put back Cd
+
+
+rerun Mar26----
+leave ufbce constant throughout
+viscosity in x direction
+intpol - leave extrapolation on
+put kappa=0.65 back
+
+-----------
+put back code from bkup_worksNI96
+viscosity in x added
+use intpol_3rdorder.f
+works fine
+
+Now change ufbce to be average of values in channel
+output in Mar26
+
+This seems to work the best. 
+
+Try changing dH with time, - interpolate between dHinit and dHfinal. updatedH
+When dH is changed , but uf is not, then h just does the opposite of dH and 
+the velociteis stay the same with time. Result in Mar26_dH
+
+
+Modify updatedh.f to update u and uf along the channel. This seems not to work. 
+If I do it very slowly it works for 2000 time steps. 
+Mar28_
+
+Do a run with dH=.3d-2, comment out updatedH
+
+works fine -- can update inflow bc since dH is prescribed. 
+
+Mar30
+Try commenting out grassshape for rigid plants. 
+generated vortices at similar freq.  Put back grassshape
+
+Mar30 wide channel , make NJ=48 -- makes no difference. 
+Need to add y advec and bending.
+
+Apr6 inflex_dH3long  -run rigid dowels in long channel
+for rigid dowels, remove call to grassbend
+
+Try reducing drho.  drho=10, dh.3 doesn't work. drho=50 also doesn't work
+drho=50 doesn't work even with dH.1
+
+Apr7_deep4.8m   Make total depth 4.8 m and double the grid points in the vertical. 
+Doesn't work. 
+Clearly, Kz is too big
+
+Try changing vmu to 1.d-5
+but grassshape crashes if I do -- velocities are too large. 
+
+In the deep channel velocities become too large, reduce dH to 0.1d-2
+surface velocities 60cm/s  - crashes
+
+Try dH=0.03d-2   Apr17_deep4.8m_dH.03,  didn't work --
+now the velocity in the grass bed is too low - 
+
+Change depth to 3.6 m, and use dH=0.1
+
+Still doesn't work. U is decreasing down channel, but the outflow BC uses
+aveerage over a large part of the length. Restrict average to the last few points.
+
+Deep water doesn't work -- p is very high everywhere, h is wrong, w is very large. 
+
+I've noticed that vmu=1.d-4 in steadystate, but Kzmax= 1.d-5 in vdiffusion. 
+Try making Kzmax= 1.d-4 in vdiffusion  -didn't help. 
+
+Can't get the deep flow to work - If depth=2.4m - works. If depth=2.6 m, works, if depth= 2.8m  doesn't work - 
+=====
+
+Copied over from niak. 
+grassLen= 1.2m, depth=2.4 m.  zNL = 10 (insetead of 100)
+
+=== July 12, 2010 
+test the code. 
+Does not shed KH instab
+replace openbc_romate  with openbc_fix where the outflow bndry is taken
+from the middle of the channel - this works
+
+Increase grid spacing to make channel longer - and KH shedding is fine
+
+---

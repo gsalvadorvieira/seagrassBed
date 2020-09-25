@@ -1,0 +1,27 @@
+# gulf.in
+nsteps, tstep, ngraph (export 3d every), frame_int (frame interval for 2d)
+20000 0.02d0 500 10
+dx,	dy
+0.1d0 0.1d0
+
+# mg.in
+nx,ny,nz,noc(cycles),nu1(iterations of linerelax),nu2(linerelax call in mgrid),tol
+432 8 48 30 2 1 1.d-12
+
+# dims.f
+NKg
+24
+
+# Physical parameters
+drho
+50.d0
+
+# Model parameters - advecn_openbc.f & vdiffusion_damping_sponge.f
+dampAmp, dampFrac, grassFrac
+5.d-2    60.d0	   210.d0
+
+# Surface slope dH, related to velocity profile magnitude
+3.d-3
+
+# Set initial dz (does not account for mapping)
+0.05d0

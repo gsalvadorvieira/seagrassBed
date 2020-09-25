@@ -1,0 +1,4 @@
+nsteps, tstep, ngraph (export 3d every), frame_int (frame interval for 2d)
+20000 0.02d0 500 10
+dx,	dy
+0.1d0 0.1d0

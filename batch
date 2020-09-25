@@ -1,0 +1,5 @@
+ Number of grid points on fine grid: nx,ny,nz         432           8          48
+ m,ntint,ntout,nbc(m)           1      165888      217000       49152
+ m,ntint,ntout,nbc(m)           2       20736       34008       12288
+ m,ntint,ntout,nbc(m)           3        2592        6160        3072
+ maxdim =       257168  maxint =       189216   nbc =       64512

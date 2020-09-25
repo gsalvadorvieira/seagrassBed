@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH -o job_%j.%N.log
+#SBATCH -e job_%j.%N.err
+#SBATCH -J psom
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=12
+#SBATCH --time=5-0:0:0
+#SBATCH --mail-type=all
+#SBATCH --mail-user=g.salvador.vieira@gmail.com
+#SBATCH -p allshouse
+##SBATCH --exclude=c[3145]
+#SBATCH --exclusive
+
+###### Sequence of commands
+
+echo -e '## Parameter update ##\n'
+./updateParameters.sh
+
+echo -e '\n## Makefile ##\n'
+make
+
+echo -e '\n## Execute solver ##\n'
+./nhg
+
+echo -e '\n## Clean auxiliary files and move output ##\n'
+make clean
+
